@@ -6,7 +6,7 @@ WORKDIR /app
 COPY . /app
 
 # Install Flask and other dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r reqdev.txt
 
 EXPOSE 5000
 
