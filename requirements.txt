@@ -6,3 +6,4 @@ python-dotenv
 secure-smtplib
 langchain-openai
 langchain-community
+twilio
