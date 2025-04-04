@@ -1,0 +1,8 @@
+pymongo
+requests
+Flask
+Flask-Cors
+python-dotenv
+secure-smtplib
+langchain-openai
+langchain-community
