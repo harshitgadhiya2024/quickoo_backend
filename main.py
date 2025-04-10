@@ -38,15 +38,6 @@ def register_user():
 
         get_all_user_data = mongoOperation().get_all_data_from_coll(client, "quickoo", "user_data")
         all_userids = [user_data["user_id"] for user_data in get_all_user_data]
-        all_emails = [user_data["email"] for user_data in get_all_user_data]
-        all_phone_number = [user_data["phone_number"] for user_data in get_all_user_data]
-
-        if email in all_emails:
-            response_data = commonOperation().get_error_msg("Your email already registered with other account...")
-            return response_data
-        if phone_number in all_phone_number:
-            response_data = commonOperation().get_error_msg("Your number already registered with other account...")
-            return response_data
 
         flag = True
         user_id = ""
@@ -84,6 +75,11 @@ def otp_email_verification():
     try:
         otp = request.form["otp"]
         email = request.form["email"]
+        get_all_user_data = mongoOperation().get_all_data_from_coll(client, "quickoo", "user_data")
+        all_emails = [user_data["email"] for user_data in get_all_user_data]
+        if email in all_emails:
+            return commonOperation().get_error_msg("Email already registered...")
+
         html_format = htmlOperation().otp_verification_process(otp)
         emailOperation().send_email(email, "Quickoo: Your Account Verification Code", html_format)
         response_data = commonOperation().get_success_response(200, {"message": "Mail sent successfully..."})
