@@ -35,7 +35,7 @@ class commonOperation():
     def get_error_msg(self, error):
         try:
             response_data = {
-                "data": {"error_message": error},
+                "data": {"message": error},
                 "status": 403,
                 "timestamp": commonOperation().get_timestamp()
             }
