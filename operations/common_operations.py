@@ -21,7 +21,7 @@ class commonOperation():
     def get_success_response(self, statuscode, data):
         try:
             response_data = {
-                "response_data": data,
+                "data": data,
                 "status": statuscode,
                 "timestamp": commonOperation().get_timestamp()
             }
