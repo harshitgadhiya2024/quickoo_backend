@@ -130,7 +130,7 @@ def forgot_password():
             if email_data[0]["is_active"]:
                 html_format = htmlOperation().otp_verification_process(otp)
                 emailOperation().send_email(email, "Quickoo: Your Account Verification Code", html_format)
-                return commonOperation().get_success_response(200, {"message": "Account Exits.."})
+                return commonOperation().get_success_response(200, {"message": "Account Exits..", "user_id": email_data[0]["user_id"]})
             else:
                 return commonOperation().get_error_msg("Your account was disabled, Contact administration")
         else:
