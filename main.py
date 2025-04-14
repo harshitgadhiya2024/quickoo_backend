@@ -159,6 +159,45 @@ def change_password():
         print(f"{datetime.now()}: Error in change password route: {str(e)}")
         return response_data
 
+@app.route("/quickoo/update-user-data", methods=["POST"])
+def update_user_data():
+    try:
+        first_name = request.form.get("first_name")
+        dob = request.form.get("dob")
+        email = request.form.get("email", "")
+        phone_number = request.form.get("phone_number", "")
+        user_id = request.form.get("user_id", "")
+
+        if first_name:
+            mongoOperation().update_mongo_data(client, "quickoo", "user_data", {"user_id":user_id}, {"first_name": first_name})
+            return commonOperation().get_success_response(200, {"message": "Name updated successfully..."})
+        else:
+            return commonOperation().get_error_msg("Something won't wrong!")
+
+        if dob:
+            mongoOperation().update_mongo_data(client, "quickoo", "user_data", {"user_id":user_id}, {"dob": dob})
+            return commonOperation().get_success_response(200, {"message": "Date of birth updated successfully..."})
+        else:
+            return commonOperation().get_error_msg("Something won't wrong!")
+
+        if email:
+            mongoOperation().update_mongo_data(client, "quickoo", "user_data", {"user_id":user_id}, {"email": email, "is_email": True})
+            return commonOperation().get_success_response(200, {"message": "Email updated successfully..."})
+        else:
+            return commonOperation().get_error_msg("Something won't wrong!")
+
+        if phone_number:
+            mongoOperation().update_mongo_data(client, "quickoo", "user_data", {"user_id":user_id}, {"phone_number": phone_number, "is_phone": True})
+            return commonOperation().get_success_response(200, {"message": "Phone number updated successfully..."})
+        else:
+            return commonOperation().get_error_msg("Something won't wrong!")
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again...")
+        print(f"{datetime.now()}: Error in updare user data route: {str(e)}")
+        return response_data
+
+
 # @app.route("/quickoo/driving_licence", methods=["POST"])
 # def change_password():
 #     try:
