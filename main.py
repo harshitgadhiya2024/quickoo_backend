@@ -171,22 +171,13 @@ def update_user_data():
         if first_name:
             mongoOperation().update_mongo_data(client, "quickoo", "user_data", {"user_id":user_id}, {"first_name": first_name})
             return commonOperation().get_success_response(200, {"message": "Name updated successfully..."})
-        else:
-            return commonOperation().get_error_msg("Something won't wrong!")
-
-        if dob:
+        elif dob:
             mongoOperation().update_mongo_data(client, "quickoo", "user_data", {"user_id":user_id}, {"dob": dob})
             return commonOperation().get_success_response(200, {"message": "Date of birth updated successfully..."})
-        else:
-            return commonOperation().get_error_msg("Something won't wrong!")
-
-        if email:
+        elif email:
             mongoOperation().update_mongo_data(client, "quickoo", "user_data", {"user_id":user_id}, {"email": email, "is_email": True})
             return commonOperation().get_success_response(200, {"message": "Email updated successfully..."})
-        else:
-            return commonOperation().get_error_msg("Something won't wrong!")
-
-        if phone_number:
+        elif phone_number:
             mongoOperation().update_mongo_data(client, "quickoo", "user_data", {"user_id":user_id}, {"phone_number": phone_number, "is_phone": True})
             return commonOperation().get_success_response(200, {"message": "Phone number updated successfully..."})
         else:
