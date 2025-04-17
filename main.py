@@ -222,7 +222,7 @@ def save_rides():
                 "cities": list(cities),
                 "start_date": start_date,
                 "start_time": start_time,
-                "persons": int(person_count)
+                "persons": int(person_count),
                 "is_daily": is_daily,
                 "days": list(days),
                 "is_completed": False,
