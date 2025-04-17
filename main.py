@@ -7,6 +7,7 @@ from flask_cors import CORS
 from datetime import datetime, date
 from operations.mail_sending import emailOperation
 from utils.html_format import htmlOperation
+from operations.maps_integration import MapsIntegration
 import uuid
 
 app = Flask(__name__)
@@ -188,6 +189,54 @@ def update_user_data():
         print(f"{datetime.now()}: Error in updare user data route: {str(e)}")
         return response_data
 
+@app.route("/quickoo/get-cities-for-location", methods=["POST"])
+def get_cities_for_locations():
+    try:
+        from_location = request.form.get("from")
+        to_location = request.form.get("to")
+        cities = MapsIntegration().find_cities_along_route(from_location, to_location, sample_points=20)
+        return commonOperation().get_success_response(200, cities)
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again...")
+        print(f"{datetime.now()}: Error in updare user data route: {str(e)}")
+        return response_data
+
+@app.route("/quickoo/save_rides", methods=["POST"])
+def save_rides():
+    try:
+        from_location = request.form.get("from")
+        to_location = request.form.get("to")
+        cities = list(request.form.get("cities"))
+        start_date = request.form.get("start_date")
+        start_time = request.form.get("start_time")
+        person_count = request.form.get("count")
+        is_daily = request.form.get("is_daily")
+        days = list(request.form.get("days"))
+        if from_location.lower() == to_location.lower():
+            response_data = commonOperation().get_error_msg("Pickup & Drop Point are same...")
+        else:
+            mapping_dict = {
+                "from_location": from_location,
+                "to_location": to_location,
+                "cities": list(cities),
+                "start_date": start_date,
+                "start_time": start_time,
+                "persons": int(person_count)
+                "is_daily": is_daily,
+                "days": list(days),
+                "is_completed": False,
+                "created_on": datetime.utcnow()
+            }
+        
+            mongoOperation().insert_data_from_coll(client, "quickoo", "rides_data", mapping_dict)
+            response_data = commonOperation().get_success_response(200, {"message": "Ride created successfully..."})
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again...")
+        print(f"{datetime.now()}: Error in create ride route: {str(e)}")
+        return response_data
+
 
 # @app.route("/quickoo/driving_licence", methods=["POST"])
 # def change_password():
@@ -225,4 +274,4 @@ def sms_sending():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=8000)
