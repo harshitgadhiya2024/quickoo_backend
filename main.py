@@ -205,6 +205,7 @@ def get_cities_for_locations():
 @app.route("/quickoo/save_rides", methods=["POST"])
 def save_rides():
     try:
+        user_id = request.form.get("user_id")
         from_location = request.form.get("from")
         to_location = request.form.get("to")
         cities = list(request.form.get("cities"))
@@ -217,6 +218,7 @@ def save_rides():
             response_data = commonOperation().get_error_msg("Pickup & Drop Point are same...")
         else:
             mapping_dict = {
+                "user_id": user_id
                 "from_location": from_location,
                 "to_location": to_location,
                 "cities": list(cities),
