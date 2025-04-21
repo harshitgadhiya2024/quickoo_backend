@@ -84,8 +84,8 @@ def register_user():
 @app.route("/quickoo/google-auth", methods=["POST"])
 def google_auth():
     try:
-        first_name = request.get("first_name", "")
-        profile_url = request.get("profile_url", "")
+        first_name = request.form.get("first_name", "")
+        profile_url = request.form.get("profile_url", "")
         email = request.form.get("email", "")
         if profile_url:
             is_profile = True
