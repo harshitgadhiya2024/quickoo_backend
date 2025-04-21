@@ -39,6 +39,9 @@ def register_user():
 
         get_all_user_data = mongoOperation().get_all_data_from_coll(client, "quickoo", "user_data")
         all_userids = [user_data["user_id"] for user_data in get_all_user_data]
+        all_emails = [user_data["email"] for user_data in get_all_user_data]
+        if email in all_emails:
+            return commonOperation().get_error_msg("Email already exits..")
 
         flag = True
         user_id = ""
@@ -51,13 +54,19 @@ def register_user():
             "user_id": user_id,
             "first_name": first_name,
             "dob": dob,
+            "profile_url": "",
+            "bio": "",
             "gender": gender,
             "password": password,
             "email": email,
             "phone_number": phone_number,
-            "is_active": True,
+            "is_profile": False,
+            "vehicle_details": {},
+            "is_vehicle": False,
+            "is_verified": False,
             "is_email": is_email,
             "is_phone": is_phone,
+            "is_active": True,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
