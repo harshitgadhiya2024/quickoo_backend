@@ -26,6 +26,7 @@ def register_user():
         gender = request.form["gender"]
         password = request.form["password"]
         email = request.form.get("email", "")
+        type_of = request.form.get("type", "email")
         phone_number = request.form.get("phone_number", "")
         if email:
             is_email = True
@@ -67,6 +68,7 @@ def register_user():
             "is_email": is_email,
             "is_phone": is_phone,
             "is_active": True,
+            "type": type_of,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
