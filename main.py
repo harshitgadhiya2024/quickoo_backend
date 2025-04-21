@@ -26,7 +26,6 @@ def register_user():
         gender = request.form["gender"]
         password = request.form["password"]
         email = request.form.get("email", "")
-        type_of = request.form.get("type", "email")
         phone_number = request.form.get("phone_number", "")
         if email:
             is_email = True
@@ -68,7 +67,7 @@ def register_user():
             "is_email": is_email,
             "is_phone": is_phone,
             "is_active": True,
-            "type": type_of,
+            "type": "email",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -81,6 +80,58 @@ def register_user():
         response_data = commonOperation().get_error_msg("Please try again..")
         print(f"{datetime.utcnow()}: Error in register user data route: {str(e)}")
         return response_data
+
+@app.route("/quickoo/google-auth", methods=["POST"])
+def google_auth():
+    try:
+        first_name = request.form["first_name"]
+        profile_url = request.form["profile_url"]
+        email = request.form.get("email", "")
+
+        get_all_user_data = mongoOperation().get_all_data_from_coll(client, "quickoo", "user_data")
+        all_userids = [user_data["user_id"] for user_data in get_all_user_data]
+        all_emails = [user_data["email"] for user_data in get_all_user_data]
+        if email in all_emails:
+            return commonOperation().get_error_msg("Email already exits..")
+
+        flag = True
+        user_id = ""
+        while flag:
+            user_id = str(uuid.uuid4())
+            if user_id not in all_userids:
+                flag = False
+
+        mapping_dict = {
+            "user_id": user_id,
+            "first_name": first_name,
+            "dob": "",
+            "profile_url": profile_url,
+            "bio": "",
+            "gender": "",
+            "password": "",
+            "email": email,
+            "phone_number": "",
+            "is_profile": True,
+            "vehicle_details": {},
+            "is_vehicle": False,
+            "is_verified": False,
+            "is_email": True,
+            "is_phone": False,
+            "is_active": True,
+            "type": "google",
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+
+        mongoOperation().insert_data_from_coll(client, "quickoo", "user_data", mapping_dict)
+        response_data_msg = commonOperation().get_success_response(200, {"user_id": mapping_dict["user_id"]})
+        return response_data_msg
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in register user data route: {str(e)}")
+        return response_data
+
 
 @app.route("/quickoo/otp-email-verification", methods=["POST"])
 def otp_email_verification():
