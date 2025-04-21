@@ -229,7 +229,7 @@ def save_rides():
             response_data = commonOperation().get_error_msg("Pickup & Drop Point are same...")
         else:
             mapping_dict = {
-                "user_id": user_id
+                "user_id": user_id,
                 "from_location": from_location,
                 "to_location": to_location,
                 "cities": list(cities),
