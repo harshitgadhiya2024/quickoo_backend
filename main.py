@@ -94,10 +94,10 @@ def google_auth():
 
         get_all_user_data = mongoOperation().get_all_data_from_coll(client, "quickoo", "user_data")
         all_userids = [user_data["user_id"] for user_data in get_all_user_data]
-        all_emails = [user_data["email"] for user_data in get_all_user_data]
-        if email in all_emails:
-            response_data_msg = commonOperation().get_success_response(200, {"user_id": get_all_user_data[0]["user_id"]})
-            return response_data_msg
+        for user_data in get_all_user_data:
+            if email==user_data["email"]:
+                response_data_msg = commonOperation().get_success_response(200, {"user_id": get_all_user_data[0]["user_id"]})
+                return response_data_msg
 
         flag = True
         user_id = ""
@@ -362,4 +362,4 @@ def sms_sending():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=8922)
