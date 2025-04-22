@@ -116,7 +116,7 @@ def google_auth():
             "phone_number": "",
             "bio": "",
             "vehicle_details": {},
-            "payment_details": {}
+            "payment_details": {},
             "is_profile": is_profile,
             "is_vehicle": False,
             "is_email": True,
