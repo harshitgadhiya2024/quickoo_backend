@@ -362,4 +362,4 @@ def sms_sending():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8899)
+    app.run(host="0.0.0.0", port=5000)
