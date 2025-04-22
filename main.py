@@ -140,8 +140,8 @@ def get_user_data():
         get_all_user_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo", "user_data", {"user_id": user_id}))
         response_data = get_all_user_data[0]
         del response_data["_id"]
-        del response_data["created_on"]
-        del response_data["updated_on"]
+        del response_data["created_at"]
+        del response_data["updated_at"]
         response_data_msg = commonOperation().get_success_response(200, response_data)
         return response_data_msg
 
@@ -355,4 +355,4 @@ def sms_sending():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=8080)
