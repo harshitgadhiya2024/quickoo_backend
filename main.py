@@ -39,9 +39,6 @@ def register_user():
 
         get_all_user_data = mongoOperation().get_all_data_from_coll(client, "quickoo", "user_data")
         all_userids = [user_data["user_id"] for user_data in get_all_user_data]
-        all_emails = [user_data["email"] for user_data in get_all_user_data]
-        if email in all_emails:
-            return commonOperation().get_error_msg("Email already exits..")
 
         flag = True
         user_id = ""
@@ -140,43 +137,12 @@ def google_auth():
 def get_user_data():
     try:
         user_id = request.form["user_id"]
-        get_all_user_data = mongoOperation().get_spec_data_from_coll(client, "quickoo", "user_data", {"user_id": user_id})
-        all_userids = [user_data["user_id"] for user_data in get_all_user_data]
-        all_emails = [user_data["email"] for user_data in get_all_user_data]
-        if email in all_emails:
-            return commonOperation().get_error_msg("Email already exits..")
-
-        flag = True
-        user_id = ""
-        while flag:
-            user_id = str(uuid.uuid4())
-            if user_id not in all_userids:
-                flag = False
-
-        mapping_dict = {
-            "user_id": user_id,
-            "first_name": first_name,
-            "dob": "",
-            "profile_url": profile_url,
-            "bio": "",
-            "gender": "",
-            "password": "",
-            "email": email,
-            "phone_number": "",
-            "is_profile": True,
-            "vehicle_details": {},
-            "is_vehicle": False,
-            "is_verified": False,
-            "is_email": True,
-            "is_phone": False,
-            "is_active": True,
-            "type": "google",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        }
-
-        mongoOperation().insert_data_from_coll(client, "quickoo", "user_data", mapping_dict)
-        response_data_msg = commonOperation().get_success_response(200, {"user_id": mapping_dict["user_id"]})
+        get_all_user_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo", "user_data", {"user_id": user_id}))
+        response_data = get_all_user_data[0]
+        del response_data["_id"]
+        del response_data["created_on"]
+        del response_data["updated_on"]
+        response_data_msg = commonOperation().get_success_response(200, response_data)
         return response_data_msg
 
     except Exception as e:
