@@ -96,7 +96,7 @@ def google_auth():
         all_userids = [user_data["user_id"] for user_data in get_all_user_data]
         for user_data in get_all_user_data:
             if email==user_data["email"]:
-                response_data_msg = commonOperation().get_success_response(200, {"user_id": get_all_user_data[0]["user_id"]})
+                response_data_msg = commonOperation().get_success_response(200, {"user_id": user_data["user_id"]})
                 return response_data_msg
 
         flag = True
