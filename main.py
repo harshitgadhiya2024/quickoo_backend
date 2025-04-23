@@ -2,19 +2,31 @@ from operations.mongo_operation import mongoOperation
 from operations.common_operations import commonOperation
 from utils.constant import constant_dict
 import os, json
-from flask import (Flask, render_template, request, session, send_file)
+from flask import (Flask, render_template, request, session, send_file, jsonify, send_from_directory)
 from flask_cors import CORS
 from datetime import datetime, date
 from operations.mail_sending import emailOperation
 from utils.html_format import htmlOperation
 from operations.maps_integration import MapsIntegration
 import uuid
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 CORS(app)
 
 app.config["SECRET_KEY"] = constant_dict.get("secreat_key")
 UPLOAD_FOLDER = 'static/uploads/'
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+
+# Utility to check allowed file types
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 client = mongoOperation().mongo_connect(get_mongourl=constant_dict.get("mongo_url"))
 
@@ -359,7 +371,33 @@ def sms_sending():
         return response_data
 
 
+@app.route('/upload-profile-photo', methods=['POST'])
+def upload_profile_picture():
+    try:
+        user_id = request.form.get("user_id", "")
+        if 'image' not in request.files:
+            return commonOperation().get_error_msg("No selected file")
+        
+        file = request.files['image']
+
+        if file.filename == '':
+            return commonOperation().get_error_msg("No selected file")
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            image_url = request.host_url + 'static/uploads/' + filename
+            mongoOperation().update_mongo_data(client, "quickoo", "user_data", {"user_id": user_id}, {"profile_url": image_url, "is_profile": True})
+            return commonOperation().get_success_response(200, {"profile_url": image_url})
+        else:
+            return commonOperation().get_error_msg("File type not allowed..")
+        
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in sms sending for phone number: {str(e)}")
+        return response_data
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=8080)
