@@ -484,7 +484,23 @@ def get_past_rides():
         response_data = commonOperation().get_error_msg("Please try again..")
         print(f"{datetime.utcnow()}: Error in check get past rides from user: {str(e)}")
         return response_data
+    
+@app.route('/quickoo/get_spec_past_ride', methods=['GET'])
+def get_spec_past_ride():
+    try:
+        ride_id = request.form.get("ride_id", "")
+        ride_data = mongoOperation().get_spec_data_from_coll(client, "quickoo", "rides_data", {"ride_id": ride_id})
+        rides_data = []
+        for ride in ride_data:
+            del ride["_id"]
+            rides_data.append(ride)
+        return commonOperation().get_success_response(200, rides_data)
+        
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in check get past rides from user: {str(e)}")
+        return response_data
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=8080)
