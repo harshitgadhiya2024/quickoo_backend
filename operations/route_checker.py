@@ -2,11 +2,6 @@ import requests
 import polyline
 from math import radians, sin, cos, sqrt, atan2
 import os
-from dotenv import load_dotenv
-
-# Load API key from environment variables
-load_dotenv()
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 class RouteValidator:
     def __init__(self, api_key):
@@ -173,36 +168,3 @@ class RouteValidator:
             'drop_coords': drop_coords,
             'matching_routes': valid_routes
         }
-
-# Example usage
-def main():
-    # You need to get a Google API key with Places API and Directions API enabled
-    validator = RouteValidator("AIzaSyB-Z1yfO79TH2uuDT9-fu-0YmHCRL_B9IA")
-    
-    # Add the route from your example
-    validator.add_route(
-        route_id="ahmedabad_junagadh",
-        from_city="Ahmedabad, Gujarat, India",
-        to_city="Junagadh, Gujarat, India",
-        via_cities=["Lathi, Gujarat, India", "Dhasa, Gujarat, India", 
-                    "Amreli, Gujarat, India", "Dhari, Gujarat, India", "Bilkha, Gujarat, India"]
-    )
-    
-    # Test with user input
-    pickup = "Ahmedabad, Gujarat, India"
-    drop = "lakhapadar, Gujarat, India"
-    
-    result = validator.validate_user_trip(pickup, drop)
-    
-    if result['valid']:
-        print(f"✅ Valid trip! The journey from {result['pickup_address']} to {result['drop_address']} is along these routes:")
-        for route in result['matching_routes']:
-            print(f"  - Route from {route['from']} to {route['to']}")
-            print(f"    (Pickup is {route['pickup_distance_km']}km from route, Drop is {route['drop_distance_km']}km from route)")
-    else:
-        print(f"❌ Invalid trip. The journey from {result.get('pickup_address', pickup)} to {result.get('drop_address', drop)} doesn't match any defined routes.")
-        if 'error' in result:
-            print(f"Error: {result['error']}")
-
-if __name__ == "__main__":
-    main()

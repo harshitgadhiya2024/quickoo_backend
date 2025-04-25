@@ -10,6 +10,7 @@ from utils.html_format import htmlOperation
 from operations.maps_integration import MapsIntegration
 import uuid
 from werkzeug.utils import secure_filename
+from operations.route_checker import RouteValidator
 
 app = Flask(__name__)
 CORS(app)
@@ -413,10 +414,54 @@ def upload_profile_picture():
 @app.route('/quickoo/check-verified', methods=['GET'])
 def check_verified():
     try:
-        user_id = request.form.get("user_id", "")
+        user_id = request.args.get("user_id", "")
         user_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo", "user_data", {"user_id": user_id}))
         user_data = user_data[0]
         return commonOperation().get_success_response(200, {"verified": user_data["is_verified"]})
+        
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in check verified status from user: {str(e)}")
+        return response_data
+
+@app.route('/get_ride', methods=['GET'])
+def get_ride():
+    try:
+        user_id = request.form.get("user_id", "")
+        pickup = request.form.get("pickup", "")
+        drop = request.form.get("drop", "")
+        start_date = request.form.get("start_date", "")
+        count = int(request.form.get("count", 1))
+        user_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo", "rides_data", {"is_completed": False, "start_date": start_date, "persons": count}))
+        validator = RouteValidator("AIzaSyB-Z1yfO79TH2uuDT9-fu-0YmHCRL_B9IA")
+        
+        # Add the route from your example
+        validator.add_route(
+            route_id="ahmedabad_junagadh",
+            from_city="Ahmedabad, Gujarat, India",
+            to_city="Junagadh, Gujarat, India",
+            via_cities=["Lathi, Gujarat, India", "Dhasa, Gujarat, India", 
+                        "Amreli, Gujarat, India", "Dhari, Gujarat, India", "Bilkha, Gujarat, India"]
+        )
+        
+        # Test with user input
+        pickup = "Ahmedabad, Gujarat, India"
+        drop = "lakhapadar, Gujarat, India"
+        
+        result = validator.validate_user_trip(pickup, drop)
+        
+        if result['valid']:
+            print(f"✅ Valid trip! The journey from {result['pickup_address']} to {result['drop_address']} is along these routes:")
+            for route in result['matching_routes']:
+                print(f"  - Route from {route['from']} to {route['to']}")
+                print(f"    (Pickup is {route['pickup_distance_km']}km from route, Drop is {route['drop_distance_km']}km from route)")
+        else:
+            print(f"❌ Invalid trip. The journey from {result.get('pickup_address', pickup)} to {result.get('drop_address', drop)} doesn't match any defined routes.")
+            if 'error' in result:
+                print(f"Error: {result['error']}")
+            user_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo", "user_data", {"user_id": user_id}))
+            user_data = user_data[0]
+            return commonOperation().get_success_response(200, {"verified": user_data["is_verified"]})
         
     except Exception as e:
         response_data = commonOperation().get_error_msg("Please try again..")
