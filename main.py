@@ -428,7 +428,7 @@ def check_verified():
         print(f"{datetime.utcnow()}: Error in check verified status from user: {str(e)}")
         return response_data
 
-@app.route('/get_ride', methods=['GET'])
+@app.route('/quickoo/get_ride', methods=['POST'])
 def get_ride():
     try:
         user_id = request.form.get("user_id", "")
@@ -436,40 +436,53 @@ def get_ride():
         drop = request.form.get("drop", "")
         start_date = request.form.get("start_date", "")
         count = int(request.form.get("count", 1))
-        user_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo", "rides_data", {"is_completed": False, "start_date": start_date, "persons": count}))
+        ride_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo", "rides_data", {"is_completed": False, "start_date": start_date}))
         validator = RouteValidator("AIzaSyB-Z1yfO79TH2uuDT9-fu-0YmHCRL_B9IA")
         
         # Add the route from your example
-        validator.add_route(
-            route_id="ahmedabad_junagadh",
-            from_city="Ahmedabad, Gujarat, India",
-            to_city="Junagadh, Gujarat, India",
-            via_cities=["Lathi, Gujarat, India", "Dhasa, Gujarat, India", 
-                        "Amreli, Gujarat, India", "Dhari, Gujarat, India", "Bilkha, Gujarat, India"]
-        )
-        
-        # Test with user input
-        pickup = "Ahmedabad, Gujarat, India"
-        drop = "lakhapadar, Gujarat, India"
-        
-        result = validator.validate_user_trip(pickup, drop)
-        
-        if result['valid']:
-            print(f"✅ Valid trip! The journey from {result['pickup_address']} to {result['drop_address']} is along these routes:")
-            for route in result['matching_routes']:
-                print(f"  - Route from {route['from']} to {route['to']}")
-                print(f"    (Pickup is {route['pickup_distance_km']}km from route, Drop is {route['drop_distance_km']}km from route)")
-        else:
-            print(f"❌ Invalid trip. The journey from {result.get('pickup_address', pickup)} to {result.get('drop_address', drop)} doesn't match any defined routes.")
-            if 'error' in result:
-                print(f"Error: {result['error']}")
-            user_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo", "user_data", {"user_id": user_id}))
-            user_data = user_data[0]
-            return commonOperation().get_success_response(200, {"verified": user_data["is_verified"]})
+        all_data = []
+        for ride_d in ride_data:
+            del ride_d["_id"]
+            validator.add_route(
+                route_id=f"{ride_d['from_location']}_{ride_d['to_location']}",
+                from_city=ride_d["from_location"],
+                to_city=ride_d["to_location"],
+                via_cities=[f"{city}, Gujarat, India" for city in ride_d["cities"]]
+            )
+            print("step1")
+            result = validator.validate_user_trip(pickup, drop)
+            print("step2")
+            if result['valid']:
+                user_id_data = ride_d["user_id"]
+                print("step3")
+                user_spec_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo", "user_data", {"user_id": user_id_data}))[0]
+                del user_spec_data["_id"]
+                print("step4")
+                all_data.append({"user_data": user_spec_data, "rides_data": ride_d})
+            else:
+                print(f"❌ Invalid trip. The journey from {result.get('pickup_address', pickup)} to {result.get('drop_address', drop)} doesn't match any defined routes.")
+            print("completed")
+        return commonOperation().get_success_response(200, {"all_rides_data": all_data})
         
     except Exception as e:
         response_data = commonOperation().get_error_msg("Please try again..")
         print(f"{datetime.utcnow()}: Error in check verified status from user: {str(e)}")
+        return response_data
+
+@app.route('/quickoo/get_past_rides', methods=['GET'])
+def get_past_rides():
+    try:
+        user_id = request.form.get("user_id", "")
+        ride_data = mongoOperation().get_spec_data_from_coll(client, "quickoo", "rides_data", {"user_id": user_id})
+        rides_data = []
+        for ride in ride_data:
+            del ride["_id"]
+            rides_data.append(ride)
+        return commonOperation().get_success_response(200, {"all_rides_data": rides_data})
+        
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in check get past rides from user: {str(e)}")
         return response_data
 
 
