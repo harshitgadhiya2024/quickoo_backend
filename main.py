@@ -315,8 +315,19 @@ def save_rides():
         if from_location.lower() == to_location.lower():
             response_data = commonOperation().get_error_msg("Pickup & Drop Point are same...")
         else:
+            all_rides_data = list(mongoOperation().get_all_data_from_coll(client, "quickoo", "rides_data"))
+            all_rideids = [ride_data["ride_id"] for ride_data in all_rides_data]
+
+            flag = True
+            ride_id = ""
+            while flag:
+                ride_id = str(uuid.uuid4())
+                if ride_id not in all_rideids:
+                    flag = False
+            
             mapping_dict = {
                 "user_id": user_id,
+                "ride_id": ride_id,
                 "from_location": from_location,
                 "to_location": to_location,
                 "cities": list(cities),
