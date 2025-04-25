@@ -462,7 +462,7 @@ def get_ride():
             else:
                 print(f"❌ Invalid trip. The journey from {result.get('pickup_address', pickup)} to {result.get('drop_address', drop)} doesn't match any defined routes.")
             print("completed")
-        return commonOperation().get_success_response(200, {"all_rides_data": all_data})
+        return commonOperation().get_success_response(200, all_data)
         
     except Exception as e:
         response_data = commonOperation().get_error_msg("Please try again..")
@@ -478,7 +478,7 @@ def get_past_rides():
         for ride in ride_data:
             del ride["_id"]
             rides_data.append(ride)
-        return commonOperation().get_success_response(200, {"all_rides_data": rides_data})
+        return commonOperation().get_success_response(200, rides_data)
         
     except Exception as e:
         response_data = commonOperation().get_error_msg("Please try again..")
