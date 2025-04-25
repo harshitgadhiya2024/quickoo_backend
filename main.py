@@ -492,7 +492,11 @@ def get_spec_past_ride():
         ride_data = mongoOperation().get_spec_data_from_coll(client, "quickoo", "rides_data", {"ride_id": ride_id})
         rides_data = []
         for ride in ride_data:
+            passengers = []
+            if ride.get("passengers", "none")=="none":
+                ride["passengers"]=passengers
             del ride["_id"]
+
             rides_data.append(ride)
         return commonOperation().get_success_response(200, rides_data)
         
@@ -503,4 +507,4 @@ def get_spec_past_ride():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="0.0.0.0", port=5000)
