@@ -306,12 +306,12 @@ def save_rides():
         user_id = request.form.get("user_id")
         from_location = request.form.get("from")
         to_location = request.form.get("to")
-        cities = list(request.form.get("cities"))
+        cities = json.loads(request.form.get("cities"))
         start_date = request.form.get("start_date")
         start_time = request.form.get("start_time")
-        person_count = request.form.get("count")
-        is_daily = request.form.get("is_daily")
-        days = list(request.form.get("days"))
+        person_count = int(request.form.get("count", 1))
+        is_daily = bool(request.form.get("is_daily"))
+        days = json.loads(request.form.get("days"))
         if from_location.lower() == to_location.lower():
             response_data = commonOperation().get_error_msg("Pickup & Drop Point are same...")
         else:
@@ -342,7 +342,8 @@ def save_rides():
         
             mongoOperation().insert_data_from_coll(client, "quickoo", "rides_data", mapping_dict)
             response_data = commonOperation().get_success_response(200, {"message": "Ride created successfully..."})
-
+        
+        return response_data
     except Exception as e:
         response_data = commonOperation().get_error_msg("Please try again...")
         print(f"{datetime.now()}: Error in create ride route: {str(e)}")
@@ -407,6 +408,19 @@ def upload_profile_picture():
     except Exception as e:
         response_data = commonOperation().get_error_msg("Please try again..")
         print(f"{datetime.utcnow()}: Error in sms sending for phone number: {str(e)}")
+        return response_data
+
+@app.route('/quickoo/check-verified', methods=['GET'])
+def check_verified():
+    try:
+        user_id = request.form.get("user_id", "")
+        user_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo", "user_data", {"user_id": user_id}))
+        user_data = user_data[0]
+        return commonOperation().get_success_response(200, {"verified": user_data["is_verified"]})
+        
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in check verified status from user: {str(e)}")
         return response_data
 
 
