@@ -311,7 +311,11 @@ def save_rides():
         start_date = request.form.get("start_date")
         start_time = request.form.get("start_time")
         person_count = int(request.form.get("count", 1))
-        is_daily = bool(request.form.get("is_daily"))
+        is_daily = request.form.get("is_daily")
+        if is_daily=="false":
+            is_daily = False
+        else:
+            is_daily = True
         days = json.loads(request.form.get("days"))
         if from_location.lower() == to_location.lower():
             response_data = commonOperation().get_error_msg("Pickup & Drop Point are same...")
