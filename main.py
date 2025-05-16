@@ -506,5 +506,330 @@ def get_spec_past_ride():
         return response_data
 
 
+#User creation in quickoo
+@app.route("/quickoo_uk/register-user", methods=["POST"])
+def quickoo_uk_register_user():
+    try:
+        name = request.form["name"]
+        email = request.form["email"]
+        phone_number = request.form["phone_number"]
+        gender = request.form["gender"]
+        password = request.form["password"]
+
+        get_all_user_data = mongoOperation().get_all_data_from_coll(client, "quickoo_uk", "user_data")
+        all_emails = [user_data["email"] for user_data in get_all_user_data]
+        if email in all_emails:
+            return commonOperation().get_error_msg("Email already registered...")
+
+        get_all_user_data = mongoOperation().get_all_data_from_coll(client, "quickoo_uk", "login_mapping")
+        all_userids = [user_data["id"] for user_data in get_all_user_data]
+
+        flag = True
+        user_id = ""
+        while flag:
+            user_id = str(uuid.uuid4())
+            if user_id not in all_userids:
+                flag = False
+
+        mapping_dict = {
+            "id": user_id,
+            "name": name,
+            "gender": gender,
+            "email": email,
+            "phone_number": phone_number,
+            "password": password,
+            "user_type": "user",
+            "type": "email",
+            "is_active": True,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+
+        login_mapping = {
+            "id": user_id,
+            "email": email,
+            "password": password,
+            "user_type": "user",
+            "is_active": True,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+
+        mongoOperation().insert_data_from_coll(client, "quickoo_uk", "user_data", mapping_dict)
+        mongoOperation().insert_data_from_coll(client, "quickoo_uk", "login_mapping", login_mapping)
+        response_data_msg = commonOperation().get_success_response(200, {"id": user_id, "email": email})
+        return response_data_msg
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in register user data route: {str(e)}")
+        return response_data
+
+# login process for user data
+@app.route("/quickoo_uk/login", methods=["POST"])
+def quickoo_uk_login_user():
+    try:
+        email = request.form["email"]
+        password = request.form["password"]
+
+        get_all_user_data = mongoOperation().get_spec_data_from_coll(client, "quickoo_uk", "login_mapping", {"email": email, "password": password})
+        if get_all_user_data:
+            if get_all_user_data[0]["is_active"]:
+                response_data_msg = commonOperation().get_success_response(200, {"id": get_all_user_data[0]["id"], "email": email})
+            else:
+                response_data_msg = commonOperation().get_error_msg("Your account disabled.. Please contact administration")
+        else:
+            response_data_msg = commonOperation().get_error_msg("Enter correct credentials")
+
+        return response_data_msg
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in login user data route: {str(e)}")
+        return response_data
+
+@app.route("/quickoo_uk/otp-email-verification", methods=["POST"])
+def quickoo_uk_user_otp_email_verification():
+    try:
+        otp = request.form["otp"]
+        email = request.form["email"]
+        get_all_user_data = mongoOperation().get_all_data_from_coll(client, "quickoo_uk", "user_data")
+        all_emails = [user_data["email"] for user_data in get_all_user_data]
+        if email in all_emails:
+            return commonOperation().get_error_msg("Email already registered...")
+
+        html_format = htmlOperation().otp_verification_process(otp)
+        emailOperation().send_email(email, "Quickoo: Your Account Verification Code", html_format)
+        response_data = commonOperation().get_success_response(200, {"message": "Mail sent successfully..."})
+        return response_data
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again...")
+        print(f"{datetime.now()}: Error in otp email verification: {str(e)}")
+        return response_data
+
+
+@app.route("/quickoo_uk/forgot-password", methods=["POST"])
+def quickoo_uk_user_forgot_password():
+    try:
+        email = request.form["email"]
+        otp = request.form["otp"]
+        email_condition_dict = {"email": email}
+        email_data = mongoOperation().get_spec_data_from_coll(client, "quickoo_uk", "user_data", email_condition_dict)
+        if email_data:
+            if email_data[0]["is_active"]:
+                html_format = htmlOperation().otp_verification_process(otp)
+                emailOperation().send_email(email, "Quickoo: Your Account Verification Code", html_format)
+                return commonOperation().get_success_response(200, {"message": "Account Exits..", "id": email_data[0]["id"]})
+            else:
+                return commonOperation().get_error_msg("Your account was disabled, Contact administration")
+        else:
+            response_data = commonOperation().get_error_msg("Account not exits..")
+        return response_data
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again...")
+        print(f"{datetime.now()}: Error in forgot password route: {str(e)}")
+        return response_data
+
+@app.route("/quickoo_uk/change-password", methods=["POST"])
+def quickoo_uk_change_password():
+    try:
+        password = request.form["password"]
+        confirm_password = request.form["confirm_password"]
+        user_id = request.form.get("id")
+        if password==confirm_password:
+            mongoOperation().update_mongo_data(client, "quickoo_uk", "user_data", {"id":user_id}, {"password": password})
+            mongoOperation().update_mongo_data(client, "quickoo_uk", "login_mapping", {"id":user_id}, {"password": password})
+            return commonOperation().get_success_response(200, {"message": "Password updated"})
+        else:
+            return commonOperation().get_error_msg("Password doesn't match...")
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again...")
+        print(f"{datetime.now()}: Error in change password route: {str(e)}")
+        return response_data
+
+@app.route("/quickoo_uk/get-user-data", methods=["POST"])
+def quickoo_uk_get_user_data():
+    try:
+        user_id = request.form["id"]
+        get_all_user_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo_uk", "user_data", {"id": user_id}))
+        response_data = get_all_user_data[0]
+        del response_data["_id"]
+        del response_data["created_at"]
+        del response_data["updated_at"]
+        response_data_msg = commonOperation().get_success_response(200, response_data)
+        return response_data_msg
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in get user data route: {str(e)}")
+        return response_data
+
+@app.route("/quickoo_uk/update-user-data", methods=["POST"])
+def quickoo_uk_update_user_data():
+    try:
+        name = request.form.get("name")
+        email = request.form.get("email", "")
+        phone_number = request.form.get("phone_number", "")
+        user_id = request.form.get("id", "")
+
+        if name:
+            mongoOperation().update_mongo_data(client, "quickoo_uk", "user_data", {"id":user_id}, {"name": name})
+            return commonOperation().get_success_response(200, {"message": "Name updated successfully..."})
+        elif email:
+            get_all_user_data = mongoOperation().get_all_data_from_coll(client, "quickoo_uk", "user_data")
+            all_emails = [user_data["email"] for user_data in get_all_user_data]
+            if email in all_emails:
+                return commonOperation().get_error_msg("Email already registered...")
+            mongoOperation().update_mongo_data(client, "quickoo_uk", "user_data", {"id":user_id}, {"email": email})
+            mongoOperation().update_mongo_data(client, "quickoo_uk", "login_mapping", {"id":user_id}, {"email": email})
+            return commonOperation().get_success_response(200, {"message": "Email updated successfully..."})
+        elif phone_number:
+            mongoOperation().update_mongo_data(client, "quickoo_uk", "user_data", {"id":user_id}, {"phone_number": phone_number, "is_phone": True})
+            return commonOperation().get_success_response(200, {"message": "Phone number updated successfully..."})
+        else:
+            return commonOperation().get_error_msg("Something won't wrong!")
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again...")
+        print(f"{datetime.now()}: Error in update user data route: {str(e)}")
+        return response_data
+
+@app.route("/quickoo_uk/request-ride", methods=["POST"])
+def quickoo_uk_request_ride():
+    try:
+        user_id = request.form.get("id")
+        from_location = request.form.get("from")
+        to_location = request.form.get("to")
+        start_date = request.form.get("start_date")
+        start_time = request.form.get("start_time")
+        vehicle_type = request.form.get("vehicle_type")
+        if from_location.lower() == to_location.lower():
+            response_data = commonOperation().get_error_msg("Pickup & Drop Point are same...")
+        else:
+            all_rides_data = list(mongoOperation().get_all_data_from_coll(client, "quickoo_uk", "rides_data"))
+            all_rideids = [ride_data["ride_id"] for ride_data in all_rides_data]
+
+            flag = True
+            ride_id = ""
+            while flag:
+                ride_id = str(uuid.uuid4())
+                if ride_id not in all_rideids:
+                    flag = False
+
+            mapping_dict = {
+                "id": user_id,
+                "ride_id": ride_id,
+                "from_location": from_location,
+                "to_location": to_location,
+                "start_date": start_date,
+                "start_time": start_time,
+                "vehicle_type": vehicle_type,
+                "driver_details": {},
+                "is_driver": False,
+                "is_completed": False,
+                "created_on": datetime.utcnow()
+            }
+
+            mongoOperation().insert_data_from_coll(client, "quickoo_uk", "rides_data", mapping_dict)
+            response_data = commonOperation().get_success_response(200, {"message": "Ride created successfully..."})
+
+        return response_data
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again...")
+        print(f"{datetime.now()}: Error in create ride route: {str(e)}")
+        return response_data
+
+@app.route('/quickoo_uk/get-current-ride', methods=['POST'])
+def quickoo_uk_get_current_ride():
+    try:
+        user_id = request.form.get("id", "")
+        ride_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo_uk", "rides_data",{"is_completed": False, "id": user_id}))
+        all_data = []
+        for ride_d in ride_data:
+            del ride_d["_id"]
+            del ride_d["created_on"]
+            all_data.append(ride_d)
+        return commonOperation().get_success_response(200, all_data)
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in get current active ride for user: {str(e)}")
+        return response_data
+
+@app.route('/quickoo_uk/get_past_rides', methods=['POST'])
+def quickoo_uk_get_past_rides():
+    try:
+        user_id = request.form.get("id", "")
+        ride_data = mongoOperation().get_spec_data_from_coll(client, "quickoo_uk", "rides_data", {"id": user_id, "is_completed": True})
+        rides_data = []
+        for ride in ride_data:
+            del ride["_id"]
+            del ride["created_on"]
+            rides_data.append(ride)
+        return commonOperation().get_success_response(200, rides_data)
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in check get past rides for user: {str(e)}")
+        return response_data
+
+@app.route('/quickoo_uk/get_spec_past_ride', methods=['POST'])
+def quickoo_uk_get_spec_past_ride():
+    try:
+        ride_id = request.form.get("ride_id", "")
+        user_id = request.form.get("id", "")
+        ride_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo_uk", "rides_data", {"ride_id": ride_id, "id": user_id}))
+        ride_dict = ride_data[0]
+        del ride_dict["_id"]
+        del ride_dict["created_on"]
+        return commonOperation().get_success_response(200, ride_dict)
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in check get specific ride data for user: {str(e)}")
+        return response_data
+
+@app.route('/quickoo_uk/user-dashboard', methods=['POST'])
+def quickoo_uk_api_user_dashboard():
+    try:
+        user_id = request.form.get("id", "")
+        active_rides = []
+        past_rides = []
+        completed_ride = 0
+        active_ride = 0
+        ride_data = list(mongoOperation().get_spec_data_from_coll(client, "quickoo_uk", "rides_data", {"id": user_id}))[::-1]
+        for ride in ride_data:
+            del ride["_id"]
+            del ride["created_on"]
+            if ride["is_completed"]:
+                completed_ride+=1
+                if len(past_rides)!=3:
+                    past_rides.append(ride)
+            else:
+                active_ride+=1
+                if len(active_rides)!=3:
+                    active_rides.append(ride)
+
+        ride_dict = {
+            "id": user_id,
+            "total_ride": len(ride_data),
+            "completed_ride": completed_ride,
+            "active_ride": active_ride,
+            "active_rides": active_rides,
+            "past_rides": past_rides
+        }
+
+        return commonOperation().get_success_response(200, ride_dict)
+
+    except Exception as e:
+        response_data = commonOperation().get_error_msg("Please try again..")
+        print(f"{datetime.utcnow()}: Error in check get dashboard data for user: {str(e)}")
+        return response_data
+
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
